@@ -257,27 +257,26 @@ public class Vehicle {
      * @param station, the station passengers are boarding from
      * @return the number of passengers successfully boarded
      */
-    public int boardPassengers(Station station){
+    public int boardPassengers(Station station) {
         Objects.requireNonNull(station);
 
         int boarded = 0;
 
-        //check all the cargo currently waiting at the station
-        for (Cargo cargo : station.getCargoHold().getContents()){
-            if (!boardingStrategy.canBoard(cargo, itinerary)) {
-                continue;
-            }
+        for (Cargo cargo : getEligiblePassengers(station)) {
+            boolean transferred = CargoTransfer.transferCargo(
+                    station.getCargoHold(),
+                    cargoHold,
+                    cargo
+            );
 
-            //Transfer the passengers from station to vehicle if vehicle has enough capacity
-            boolean transferred = CargoTransfer.transferCargo(station.getCargoHold(), cargoHold, cargo);
-
-            if (transferred){
+            if (transferred) {
                 boarded++;
             }
         }
 
         return boarded;
     }
+    
     /**
      * Unloads passengers from the vehicle when they reach their destination station
      * @param station, the station at which vehicle has arrived
@@ -298,5 +297,15 @@ public class Vehicle {
             }
         }
         return unload;
+    }
+
+    private List<Cargo> getEligiblePassengers(Station station) {
+        Objects.requireNonNull(station);
+
+        return station.getCargoHold()
+                .getContents()
+                .stream()
+                .filter(cargo -> boardingStrategy.canBoard(cargo, itinerary))
+                .toList();
     }
 }

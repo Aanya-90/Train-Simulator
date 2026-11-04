@@ -22,15 +22,33 @@ public class Vehicle {
     private final float acceleration;
     private Itinerary itinerary;
     private double distanceAlong; // We should switch from using x and y values for the coordinates to a position along a PathwaySegment, and then interpolate X and Y when we need them for rendering in getX and getY
-
+    private final BoardingStrategy boardingStrategy;
 
 
     public Vehicle(Itinerary itinerary, float maxSpeed, float acceleration, CargoHold cargoHold) {
+        this(
+            itinerary,
+            maxSpeed,
+            acceleration,
+            cargoHold,
+            new DestinationAwareBoardingStrategy()
+        );
+    }
+
+    public Vehicle(
+            Itinerary itinerary,
+            float maxSpeed,
+            float acceleration,
+            CargoHold cargoHold,
+            BoardingStrategy boardingStrategy) {
+
         this.itinerary = Objects.requireNonNull(itinerary);
         this.cargoHold = Objects.requireNonNull(cargoHold);
+        this.boardingStrategy = Objects.requireNonNull(boardingStrategy);
+
         this.isStopped = true;
         this.maxSpeed = maxSpeed;
-        this.acceleration = acceleration; // removed the acceleration depending on capacity line, as capacity = 0 is allowed, which would error.
+        this.acceleration = acceleration;
     }
 
 
@@ -246,13 +264,8 @@ public class Vehicle {
 
         //check all the cargo currently waiting at the station
         for (Cargo cargo : station.getCargoHold().getContents()){
-            if (cargo.getType() != CargoType.PASSENGER){
+            if (!boardingStrategy.canBoard(cargo, itinerary)) {
                 continue;
-            }
-
-            //do not board the passengers whose destination is not ahead on the route
-            if (!itinerary.willVisit(cargo.getDestination())){
-            continue;
             }
 
             //Transfer the passengers from station to vehicle if vehicle has enough capacity

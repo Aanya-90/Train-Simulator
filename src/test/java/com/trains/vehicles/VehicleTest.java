@@ -127,7 +127,7 @@ public class VehicleTest {
                 10,
                 1,
                 vehicleHold,
-                new DestinationAwareBoardingStrategy()
+                BoardingStrategies.DESTINATION_AWARE
         );
 
         Cargo passenger = Cargo.passenger(otherDestination.getPos());
@@ -138,6 +138,41 @@ public class VehicleTest {
         assertEquals(0, boarded);
         assertEquals(1, origin.getCargoHold().getUsedUnits());
         assertEquals(0, vehicle.getCargoHold().getUsedUnits());
+    }
+
+    @Test
+    void passengerOnlyStrategyBoardsPassengerRegardlessOfDestination() {
+        Network network = new Network();
+
+        Station origin = network.addStation(new GridPos(0, 0), 10);
+        Station routeDestination = network.addStation(new GridPos(10, 0), 10);
+        Station otherDestination = network.addStation(new GridPos(0, 10), 10);
+
+        network.connectNodes(origin, routeDestination);
+        network.connectNodes(origin, otherDestination);
+
+        Router router = new Router(network);
+        Route route = router.findRoute(origin, routeDestination);
+        Itinerary itinerary = new Itinerary(route);
+
+        CargoHold vehicleHold = CargoHold.forType(10, CargoType.PASSENGER);
+
+        Vehicle vehicle = new Vehicle(
+                itinerary,
+                10,
+                1,
+                vehicleHold,
+                BoardingStrategies.PASSENGER_ONLY
+        );
+
+        Cargo passenger = Cargo.passenger(otherDestination.getPos());
+        CargoTransfer.insertCargo(origin.getCargoHold(), passenger);
+
+        int boarded = vehicle.boardPassengers(origin);
+
+        assertEquals(1, boarded);
+        assertEquals(0, origin.getCargoHold().getUsedUnits());
+        assertEquals(1, vehicle.getCargoHold().getUsedUnits());
     }
 
 }

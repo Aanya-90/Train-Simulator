@@ -31,7 +31,7 @@ public class Vehicle {
             maxSpeed,
             acceleration,
             cargoHold,
-            new DestinationAwareBoardingStrategy()
+            BoardingStrategies.DESTINATION_AWARE
         );
     }
 
